@@ -24,7 +24,8 @@ class Clou {
                 ball.lastCollision = this.id
                 this.counter++
                 if(this.outNode) {
-                    ball.speed    = {x: 0, y: 3}
+                    ball.speed    = {x: 0, y: 0} // Ici, on ne relance pas la balle,  
+                                                 // sinon il suffirait juste à lui assigner une vitesse sur y 
                     ball.position = Object.assign({}, ball.basePosition)
                 }
             }

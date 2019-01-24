@@ -2,7 +2,9 @@ import React from 'react'
 import { Stage, Graphics, Text } from '@inlet/react-pixi'
 import Bille from './Bille'
 import Clou from './Clou'
+import Histogram from './Histogram'
 import * as PIXI from 'pixi.js';
+import makeGaussian from './Gaussian'
 
 const style = new PIXI.TextStyle({
   fontFamily: 'Arial',
@@ -21,19 +23,31 @@ const style = new PIXI.TextStyle({
   wordWrapWidth: 440
 })
 
+
+const normalStyle = new PIXI.TextStyle({
+    fontFamily: 'Arial',
+    fontSize: 20,
+    fontStyle: 'italic',
+    fontWeight: 'bold',
+    fill: ['#ffffff', ],
+      })
+  
+
 class Planche extends React.Component {
     constructor(props) {
         super(props)
         this.state = {
             shouldUpdate: true,
             tickId: null,
-            billes: Array(1).fill(new Bille({x: window.innerWidth / 2, y: 0})),
-            clous: []
+            billes: [],
+            clous: [],
         }
-        let nBilles = 20
+
+        let nBilles = 100
         for(let i = 0 ; i < nBilles ; i++) {
             this.state.billes.push(new Bille({x: window.innerWidth / 2, y: - i * 100}))
         }
+
         let nClous = Math.round(window.innerHeight * (7/8) / 75)
         let basePos = {x: window.innerWidth / 2 + 25, y: 0}
         for(let i = 0 ; i < nClous ; i++) {
@@ -76,27 +90,43 @@ class Planche extends React.Component {
         })
     }
 
-    render() {
+    render() {        
         let eligibleClous = this.state.clous.filter(c => c.outNode)
-        let clousAnnotations = eligibleClous.map( clou => {
+
+        let nBillesArrivees = 0
+        eligibleClous.forEach(clou => {
+            nBillesArrivees += clou.counter
+        })
+
+        let clousAnnotations = eligibleClous.map(clou => {
             return (
                 <Text x={clou.position.x - 11} y={clou.position.y + 10} text={clou.counter} style={style}/>
             )
         })
         return(
             <Stage width={window.innerWidth} height={window.innerHeight * 9/10} options={{ antialias: true }}>
+                <Text x={0} y={0} text={"nBilles : " + nBillesArrivees} style={normalStyle}/>
                 <Graphics
                     draw={g => {
                         g.clear()
-                        g.lineStyle(0)
-                        g.beginFill(0xffff0b, 1)
-                        this.state.billes.forEach(bille => {
-                            g.drawCircle(bille.position.x, bille.position.y, 5)
-                        })
-                        this.state.clous.forEach(clou => {
+                        if(nBillesArrivees < 100) {
+                            g.lineStyle(0)
+                            g.beginFill(0xffff0b, 1)
+                            this.state.billes.forEach(bille => {
+                                g.drawCircle(bille.position.x, bille.position.y, 5)
+                            })
+                        
+                            this.state.clous.forEach(clou => {
+                                g.beginFill(clou.outNode ? 0xFF00FF : 0xAAAAAA , 1)
+                                g.drawCircle(clou.position.x, clou.position.y, 5)
+                            })
+                        }
+                        let gaussian = makeGaussian(0,1,100);
+                        this.state.clous.filter(clou => clou.outNode).forEach(clou => {
                             g.beginFill(clou.outNode ? 0xFF00FF : 0xAAAAAA , 1)
-                            g.drawCircle(clou.position.x, clou.position.y, 5)
-                        })
+                            g.drawRect(clou.position.x-5/2, clou.position.y - clou.counter * 10, 5, clou.counter * 10)
+                            g.beginFill( 0xAAAAAA , 1)
+                        })    
                         g.endFill()
                     }}
                 />
